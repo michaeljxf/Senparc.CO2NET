@@ -13,7 +13,7 @@ License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF 
 either express or implied. See the License for the specific language governing permissions
 and limitations under the License.
 
-Detail: https://github.com/JeffreySu/WeiXinMPSDK/blob/master/license.md
+Detail: https://github.com/Senparc/Senparc.CO2NET/blob/master/LICENSE
 
 ----------------------------------------------------------------*/
 #endregion Apache License Version 2.0
@@ -32,6 +32,9 @@ Detail: https://github.com/JeffreySu/WeiXinMPSDK/blob/master/license.md
 
     修改标识：Senparc - 20180526
     修改描述：v4.22.0-rc1 使用 Newtonsoft.Json 进行序列化
+
+    修改标识：Senparc - 20180526
+    修改描述：v0.2.9 添加 SerializerHelper.GetObject(this string jsonString, Type type) 方法
 
 ----------------------------------------------------------------*/
 
@@ -96,6 +99,17 @@ namespace Senparc.CO2NET.Helpers
             //#endif
         }
 
+        /// <summary>
+        /// 反序列化到对象
+        /// </summary>
+        /// <param name="jsonString">JSON字符串</param>
+        /// <param name="type">反序列化类型</param>
+        /// <returns></returns>
+        public static object GetObject(this string jsonString, Type type)
+        {
+            return Newtonsoft.Json.JsonConvert.DeserializeObject(jsonString, type);
+        }
+
         //        #region 序列化对象 - byte[]
 
         //        #region 二进制实体对象
@@ -111,7 +125,7 @@ namespace Senparc.CO2NET.Helpers
         //                return null;
         //            }
 
-        //#if NETSTANDARD2_0 || NETCOREAPP2_0 || NETCOREAPP2_1
+        //#if NETSTANDARD2_0
         //            ////二进制序列化方案
         //            //using (MemoryStream memoryStream = new MemoryStream())
         //            //{
@@ -156,7 +170,7 @@ namespace Senparc.CO2NET.Helpers
         //                return default(T);
         //            }
 
-        //#if NETSTANDARD2_0 || NETCOREAPP2_0 || NETCOREAPP2_1
+        //#if NETSTANDARD2_0
         //            ////二进制序列化方案
         //            //using (MemoryStream memoryStream = new MemoryStream(stream))
         //            //{

@@ -13,7 +13,7 @@ License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF 
 either express or implied. See the License for the specific language governing permissions
 and limitations under the License.
 
-Detail: https://github.com/JeffreySu/WeiXinMPSDK/blob/master/license.md
+Detail: https://github.com/Senparc/Senparc.CO2NET/blob/master/LICENSE
 
 ----------------------------------------------------------------*/
 #endregion Apache License Version 2.0
@@ -46,7 +46,7 @@ using System.Web;
 using System.Net.Http;
 using System.Net.Http.Headers;
 #endif
-#if NETSTANDARD1_6 || NETSTANDARD2_0 || NETCOREAPP2_0 || NETCOREAPP2_1
+#if NETSTANDARD2_0
 using Microsoft.AspNetCore.Http;
 using Senparc.CO2NET.WebProxy;
 #endif
@@ -82,13 +82,13 @@ namespace Senparc.CO2NET.HttpUtility
                 request.CookieContainer = cookieContainer;
             }
 
-            HttpClientHeader(request, refererUrl, useAjax, timeOut);//设置头信息
+            HttpClientHeader(request, refererUrl, useAjax, null, timeOut);//设置头信息
 
             return request;
         }
 #endif
 
-#if NETSTANDARD1_6 || NETSTANDARD2_0 || NETCOREAPP2_0 || NETCOREAPP2_1
+#if NETSTANDARD2_0
         /// <summary>
         /// .NET Core 版本的HttpWebRequest参数设置
         /// </summary>
@@ -112,7 +112,7 @@ namespace Senparc.CO2NET.HttpUtility
             }
 
             HttpClient httpClient = new HttpClient(handler);
-            HttpClientHeader(httpClient, refererUrl, useAjax, timeOut);
+            HttpClientHeader(httpClient, refererUrl, useAjax, null, timeOut);
 
             return httpClient;
         }

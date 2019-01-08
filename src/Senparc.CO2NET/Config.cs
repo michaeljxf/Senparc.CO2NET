@@ -13,7 +13,7 @@ License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF 
 either express or implied. See the License for the specific language governing permissions
 and limitations under the License.
 
-Detail: https://github.com/JeffreySu/WeiXinMPSDK/blob/master/license.md
+Detail: https://github.com/Senparc/Senparc.CO2NET/blob/master/LICENSE
 
 ----------------------------------------------------------------*/
 #endregion Apache License Version 2.0
@@ -36,9 +36,16 @@ Detail: https://github.com/JeffreySu/WeiXinMPSDK/blob/master/license.md
    
     修改标识：Senparc - 20180704
     修改描述：v0.1.4 添加 SenparcSetting 全局配置属性
+ 
+    修改标识：Senparc - 20180830
+    修改描述：v0.2.9 优化 Config.RootDictionaryPath 方法，可自动获取默认值
    
 ----------------------------------------------------------------*/
 
+
+using System;
+using System.IO;
+using System.Text.RegularExpressions;
 
 namespace Senparc.CO2NET
 {
@@ -69,11 +76,11 @@ namespace Senparc.CO2NET
 
                 //if (_isDebug)
                 //{
-                //    WeixinTrace.Open();
+                //    SenparcTrace.Open();
                 //}
                 //else
                 //{
-                //    WeixinTrace.Close();
+                //    SenparcTrace.Close();
                 //}
             }
         }
@@ -105,9 +112,37 @@ namespace Senparc.CO2NET
             }
         }
 
+        private static string _rootDictionaryPath = null;
+
         /// <summary>
         /// 网站根目录绝对路径
         /// </summary>
-        public static string RootDictionaryPath { get; set; }
+        public static string RootDictionaryPath
+        {
+            get
+            {
+                if (_rootDictionaryPath==null)
+                {
+#if NET35 || NET40 || NET45
+                    var appPath = AppDomain.CurrentDomain.BaseDirectory;
+
+                    if (Regex.Match(appPath, $@"[\\/]$", RegexOptions.Compiled).Success)
+                    {
+                        _rootDictionaryPath = appPath;//
+                        //_rootDictionaryPath = appPath.Substring(0, appPath.Length - 1);
+
+                    }
+#else
+                    _rootDictionaryPath = AppContext.BaseDirectory;
+#endif
+                }
+
+                return _rootDictionaryPath;
+            }
+            set
+            {
+                _rootDictionaryPath = value;
+            }
+        }
     }
 }

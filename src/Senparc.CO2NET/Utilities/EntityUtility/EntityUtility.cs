@@ -13,7 +13,7 @@ License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF 
 either express or implied. See the License for the specific language governing permissions
 and limitations under the License.
 
-Detail: https://github.com/JeffreySu/WeiXinMPSDK/blob/master/license.md
+Detail: https://github.com/Senparc/Senparc.CO2NET/blob/master/LICENSE
 
 ----------------------------------------------------------------*/
 #endregion Apache License Version 2.0
@@ -112,6 +112,9 @@ namespace Senparc.CO2NET.Utilities
                         break;
                     case "DateTime":
                         setValue = DateTimeHelper.GetDateTimeFromXml(value.ToString());
+                        break;
+                    case "DateTimeOffset":
+                        setValue = DateTimeHelper.GetDateTimeOffsetFromXml(value.ToString());
                         break;
                     case "Int32":
                         setValue = value.ConvertTo<int>();

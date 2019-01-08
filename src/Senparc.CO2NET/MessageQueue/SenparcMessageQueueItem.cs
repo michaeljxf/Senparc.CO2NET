@@ -13,7 +13,7 @@ License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF 
 either express or implied. See the License for the specific language governing permissions
 and limitations under the License.
 
-Detail: https://github.com/JeffreySu/WeiXinMPSDK/blob/master/license.md
+Detail: https://github.com/Senparc/Senparc.CO2NET/blob/master/LICENSE
 
 ----------------------------------------------------------------*/
 #endregion Apache License Version 2.0
@@ -34,6 +34,8 @@ Detail: https://github.com/JeffreySu/WeiXinMPSDK/blob/master/license.md
     修改标识：Senparc - 20180601
     修改描述：v0.1.0 移植 SenparcMessageQueueItem
 
+    修改标识：Senparc - 20181226
+    修改描述：v0.4.3 修改 DateTime 为 DateTimeOffset
 ----------------------------------------------------------------*/
 
 using System;
@@ -59,7 +61,7 @@ namespace Senparc.CO2NET.MessageQueue
         /// <summary>
         /// 此实例对象的创建时间
         /// </summary>
-        public DateTime AddTime { get; set; }
+        public DateTimeOffset AddTime { get; set; }
         /// <summary>
         /// 项目说明（主要用于调试）
         /// </summary>
@@ -76,7 +78,7 @@ namespace Senparc.CO2NET.MessageQueue
             Key = key;
             Action = action;
             Description = description;
-            AddTime = DateTime.Now;
+            AddTime = SystemTime.Now;
         }
     }
 }

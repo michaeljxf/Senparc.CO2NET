@@ -13,7 +13,7 @@ License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF 
 either express or implied. See the License for the specific language governing permissions
 and limitations under the License.
 
-Detail: https://github.com/JeffreySu/WeiXinMPSDK/blob/master/license.md
+Detail: https://github.com/Senparc/Senparc.CO2NET/blob/master/LICENSE
 
 ----------------------------------------------------------------*/
 #endregion Apache License Version 2.0
@@ -45,6 +45,9 @@ Detail: https://github.com/JeffreySu/WeiXinMPSDK/blob/master/license.md
     修改描述：v0.1.0 1、移植 JsonSetting
                      2、重命名 WeixinJsonContractResolver 为 JsonContractResolver
                      3、重命名 WeiXinJsonSetting 为 JsonSettingWrap
+
+    修改标识：Senparc - 20180721
+    修改描述：v0.2.1 优化序列化特性识别
 
 ----------------------------------------------------------------*/
 
@@ -314,7 +317,7 @@ namespace Senparc.CO2NET.Helpers.Serializers
         {
             var property = base.CreateProperty(member, memberSerialization);
 
-#if false && NET45
+#if NET45
             //IgnoreNull标注的字段根据IgnoreNulls设定是否序列化
             var ignoreNull = member.GetCustomAttribute<JsonSetting.IgnoreNullAttribute>();
             if (ignoreNull != null || IgnoreNulls)
@@ -377,27 +380,36 @@ namespace Senparc.CO2NET.Helpers.Serializers
             //TypesToIgnoreNull特定类型字段为Null时不序列化
             if (TypesToIgnoreNull.Contains(property.PropertyType))
             {
-                Console.WriteLine("忽略null值：" + property.PropertyType);
+                //Console.WriteLine("忽略null值：" + property.PropertyType);
                 property.NullValueHandling = NullValueHandling.Ignore;//这样设置无效
 
                 var t = member.DeclaringType;
 
                 property.ShouldSerialize = instance =>
                 {
-                    var obj = Convert.ChangeType(instance, t);
-                    var value = (member as PropertyInfo).GetValue(obj, null);
+                    try
+                    {
+                        //var obj = Convert.ChangeType(instance, t);
+                        var value = (member as PropertyInfo).GetValue(instance, null);
 
-                    //跟踪测试
-                    //Console.WriteLine("Object Value:" + value);
-                    //Console.WriteLine("Setting Value:" + (ignoreValue as JsonSetting.IgnoreValueAttribute).Value);
-                    //Console.WriteLine("ShouldSerialize Result:" + (!value.Equals((ignoreValue as JsonSetting.IgnoreValueAttribute).Value)));
+                        //跟踪测试
+                        //Console.WriteLine("Object Value:" + value);
+                        //Console.WriteLine("Setting Value:" + (ignoreValue as JsonSetting.IgnoreValueAttribute).Value);
+                        //Console.WriteLine("ShouldSerialize Result:" + (!value.Equals((ignoreValue as JsonSetting.IgnoreValueAttribute).Value)));
 
-                    //return value != (ignoreValue as JsonSetting.IgnoreValueAttribute).Value;
+                        //return value != (ignoreValue as JsonSetting.IgnoreValueAttribute).Value;
 
-                    Console.WriteLine("TypesToIgnoreNull Value：" + value);
-                    Console.WriteLine("TypesToIgnoreNull Value is null：" + (value == null));
+                        //Console.WriteLine("TypesToIgnoreNull Value：" + value);
+                        //Console.WriteLine("TypesToIgnoreNull Value is null：" + (value == null));
 
-                    return value != null;
+                        return value != null;
+                    }
+                    catch (Exception ex)
+                    {
+                        Trace.SenparcTrace.BaseExceptionLog(new Exceptions.BaseException(ex.Message, ex));
+                        return true;
+                    }
+
                 };
             }
 
@@ -412,8 +424,8 @@ namespace Senparc.CO2NET.Helpers.Serializers
 
                 property.ShouldSerialize = instance =>
                 {
-                    var obj = Convert.ChangeType(instance, t);
-                    var value = (member as PropertyInfo).GetValue(obj, null);
+                    //var obj = Convert.ChangeType(instance, t);
+                    var value = (member as PropertyInfo).GetValue(instance, null);
 
                     //跟踪测试
                     //Console.WriteLine("Object Value:" + value);

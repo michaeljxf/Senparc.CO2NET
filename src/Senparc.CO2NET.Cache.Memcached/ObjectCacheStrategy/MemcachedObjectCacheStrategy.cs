@@ -12,12 +12,15 @@
 
     修改标识：Senparc - 20170205
     修改描述：v1.3.0 core下，MemcachedObjectCacheStrategy.GetMemcachedClientConfiguration()方法添加注入参数
-  
+
     --CO2NET--
 
     修改标识：Senparc - 20180714
     修改描述：v3.0.0 1、提供过期缓存策略
                      2、实现 MemcachedObjectCacheStrategy.GetAll() 和 Count() 方法
+
+    修改标识：Senparc - 20180802
+    修改描述：v3.1.0 Memcached 缓存服务连接信息实现从 Config.SenparcSetting 自动获取信息并注册）
 
 ----------------------------------------------------------------*/
 
@@ -25,16 +28,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 using Enyim.Caching;
 using Enyim.Caching.Configuration;
 using Enyim.Caching.Memcached;
-using Senparc.CO2NET.Cache;
+using Senparc.CO2NET.Exceptions;
 
-#if NET45 || NET461
-
-#else
+#if !NET45
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.DependencyInjection;
@@ -56,7 +55,6 @@ namespace Senparc.CO2NET.Cache.Memcached
         /// </summary>
         public static bool StoreKey { get; set; }
 
-        /// <summary>
         /// 注册列表
         /// </summary>
         /// <param name="serverlist">Key：服务器地址（通常为IP），Value：端口</param>
@@ -65,74 +63,62 @@ namespace Senparc.CO2NET.Cache.Memcached
             _serverlist = serverlist;
         }
 
-        #region 单例
-
         /// <summary>
-        /// LocalCacheStrategy的构造函数
+        /// 注册列表
         /// </summary>
-        MemcachedObjectCacheStrategy(/*ILoggerFactory loggerFactory, IOptions<MemcachedClientOptions> optionsAccessor*/)
+        /// <param name="configurationString">连接字符串</param>
+        public static void RegisterServerList(string configurationString)
         {
-            _config = GetMemcachedClientConfiguration();
-#if NET45 //|| NET461
-            Cache = new MemcachedClient(_config);
-#else
-            Cache = new MemcachedClient(null, _config);
-#endif
-        }
-
-
-        //静态LocalCacheStrategy
-        public static IBaseObjectCacheStrategy Instance
-        {
-            get
+            if (!string.IsNullOrEmpty(configurationString))
             {
-                return Nested.instance;//返回Nested类中的静态成员instance
+                var dic = new Dictionary<string, int>();
+                var servers = configurationString.Split(';');
+                foreach (var server in servers)
+                {
+                    try
+                    {
+                        var serverData = server.Split(':');
+                        dic[serverData[0]] = int.Parse(serverData[1]);
+
+                    }
+                    catch (Exception ex)
+                    {
+                        Senparc.CO2NET.Trace.SenparcTrace.BaseExceptionLog(new CacheException(ex.Message, ex));
+                    }
+                }
+
+#if !NET45
+                if (dic.Count() > 0)
+                {
+                    SenparcDI.GetServiceCollection().AddSenparcMemcached(options =>
+                    {
+                        foreach (var item in dic)
+                        {
+                            options.AddServer(item.Key, item.Value);
+                        }
+                    });
+                }
+#endif
+
+
+                RegisterServerList(dic);
             }
         }
 
-        class Nested
-        {
-            static Nested()
-            {
-            }
-            //将instance设为一个初始化的LocalCacheStrategy新实例
-            internal static readonly MemcachedObjectCacheStrategy instance = new MemcachedObjectCacheStrategy();
-        }
-
-        #endregion
-
-        #region 配置
-
-#if NET45 || NET461
-        private static MemcachedClientConfiguration GetMemcachedClientConfiguration()
-#else
-        private static MemcachedClientConfiguration GetMemcachedClientConfiguration(/*ILoggerFactory loggerFactory, IOptions<MemcachedClientOptions> optionsAccessor*/)
-#endif
-        {
-            //每次都要新建
-
-#if NET45 || NET461
-            var config = new MemcachedClientConfiguration();
-            foreach (var server in _serverlist)
-            {
-                config.Servers.Add(new IPEndPoint(IPAddress.Parse(server.Key), server.Value));
-            }
-            config.Protocol = MemcachedProtocol.Binary;
-
-#else
-            var services = new ServiceCollection();
-            var provider = services.BuildServiceProvider();
-            ILoggerFactory loggerFactory = provider.GetService<ILoggerFactory>();
-            IOptions<MemcachedClientOptions> optionsAccessor = provider.GetService<IOptions<MemcachedClientOptions>>();
-
-            var config = new MemcachedClientConfiguration(loggerFactory, optionsAccessor);
-#endif
-            return config;
-        }
+        #region 单例
 
         static MemcachedObjectCacheStrategy()
         {
+            //自动注册连接字符串信息
+            if ((_serverlist == null || _serverlist.Count == 0) &&
+                !string.IsNullOrEmpty(Config.SenparcSetting.Cache_Memcached_Configuration)
+                && Config.SenparcSetting.Cache_Memcached_Configuration != "Memcached配置")
+            {
+                RegisterServerList(Config.SenparcSetting.Cache_Memcached_Configuration);
+            }
+
             StoreKey = false;
+
 
             // //初始化memcache服务器池
             //SockIOPool pool = SockIOPool.GetInstance();
@@ -164,7 +150,7 @@ namespace Senparc.CO2NET.Cache.Memcached
             //                //config.Authentication.Parameters["userName"] = "username";
             //                //config.Authentication.Parameters["password"] = "password";
             //                //config.Authentication.Parameters["zone"] = "zone";//domain?   ——Jeffrey 2015.10.20
-            //                DateTime dt1 = DateTime.Now;
+            //                DateTime dt1 = SystemTime.Now;
             //                var config = GetMemcachedClientConfiguration();
             //                //var cache = new MemcachedClient(config);'
 
@@ -184,18 +170,84 @@ namespace Senparc.CO2NET.Cache.Memcached
             //                    throw new Exception("MemcachedStrategy失效，没有计入缓存！");
             //                }
             //                cache.Remove(testKey);
-            //                DateTime dt2 = DateTime.Now;
+            //                DateTime dt2 = SystemTime.Now;
 
-            //                WeixinTrace.Log(string.Format("MemcachedStrategy正常启用，启动及测试耗时：{0}ms", (dt2 - dt1).TotalMilliseconds));
+            //                SenparcTrace.Log(string.Format("MemcachedStrategy正常启用，启动及测试耗时：{0}ms", (dt2 - dt1).TotalMilliseconds));
             //            }
             //            catch (Exception ex)
             //            {
             //                //TODO:记录是同日志
-            //                WeixinTrace.Log(string.Format("MemcachedStrategy静态构造函数异常：{0}", ex.Message));
+            //                SenparcTrace.Log(string.Format("MemcachedStrategy静态构造函数异常：{0}", ex.Message));
             //            }
 
             #endregion
         }
+
+
+        /// <summary>
+        /// LocalCacheStrategy的构造函数
+        /// </summary>
+        MemcachedObjectCacheStrategy(/*ILoggerFactory loggerFactory, IOptions<MemcachedClientOptions> optionsAccessor*/)
+        {
+            _config = GetMemcachedClientConfiguration();
+#if NET45 //|| NET461
+            Cache = new MemcachedClient(_config);
+#else
+            var provider = SenparcDI.GetIServiceProvider();
+            ILoggerFactory loggerFactory = provider.GetService<ILoggerFactory>();
+            Cache = new MemcachedClient(loggerFactory, _config);
+#endif
+        }
+
+
+        //静态LocalCacheStrategy
+        public static IBaseObjectCacheStrategy Instance
+        {
+            get
+            {
+                return Nested.instance;//返回Nested类中的静态成员instance
+            }
+        }
+
+        class Nested
+        {
+            static Nested()
+            {
+            }
+            //将instance设为一个初始化的LocalCacheStrategy新实例
+            internal static readonly MemcachedObjectCacheStrategy instance = new MemcachedObjectCacheStrategy();
+        }
+
+        #endregion
+
+        #region 配置
+
+#if NET45
+        private static MemcachedClientConfiguration GetMemcachedClientConfiguration()
+#else
+        private static MemcachedClientConfiguration GetMemcachedClientConfiguration(/*ILoggerFactory loggerFactory, IOptions<MemcachedClientOptions> optionsAccessor*/)
+#endif
+        {
+            //每次都要新建
+
+#if NET45
+            var config = new MemcachedClientConfiguration();
+            foreach (var server in _serverlist)
+            {
+                config.Servers.Add(new IPEndPoint(IPAddress.Parse(server.Key), server.Value));
+            }
+            config.Protocol = MemcachedProtocol.Binary;
+
+#else
+            var provider = SenparcDI.GetIServiceProvider();
+            ILoggerFactory loggerFactory = provider.GetService<ILoggerFactory>();
+            IOptions<MemcachedClientOptions> optionsAccessor = provider.GetService<IOptions<MemcachedClientOptions>>();
+
+            var config = new MemcachedClientConfiguration(loggerFactory, optionsAccessor);
+#endif
+            return config;
+        }
+
 
         #endregion
 

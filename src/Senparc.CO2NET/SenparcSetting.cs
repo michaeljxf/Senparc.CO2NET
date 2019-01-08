@@ -53,7 +53,6 @@ namespace Senparc.CO2NET
         #endregion
 
 
-
         /// <summary>
         /// SenparcSetting 构造函数
         /// </summary>
@@ -70,11 +69,11 @@ namespace Senparc.CO2NET
             IsDebug = isDebug;
         }
 
-#if !NETCOREAPP2_0 && !NETCOREAPP2_1 && !NETSTANDARD2_0
+#if !NETSTANDARD2_0
         /// <summary>
         /// 从 Web.Config 文件自动生成 SenparcSetting
         /// </summary>
-        /// <param name="isDebug">设置微信的 Debug 状态 </param>
+        /// <param name="isDebug">设置 CO2NET 全局的 Debug 状态 </param>
         /// <returns></returns>
         public static SenparcSetting BuildFromWebConfig(bool isDebug)
         {

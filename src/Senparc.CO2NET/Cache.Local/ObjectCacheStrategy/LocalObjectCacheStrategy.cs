@@ -13,7 +13,7 @@ License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF 
 either express or implied. See the License for the specific language governing permissions
 and limitations under the License.
 
-Detail: https://github.com/JeffreySu/WeiXinMPSDK/blob/master/license.md
+Detail: https://github.com/Senparc/Senparc.CO2NET/blob/master/LICENSE
 
 ----------------------------------------------------------------*/
 #endregion Apache License Version 2.0
@@ -33,6 +33,9 @@ Detail: https://github.com/JeffreySu/WeiXinMPSDK/blob/master/license.md
     修改标识：Senparc - 20170205
     修改描述：v0.2.0 重构分布式锁
 
+    修改标识：Senparc - 20181226
+    修改描述：v0.4.3 修改 DateTime 为 DateTimeOffset
+
  ----------------------------------------------------------------*/
 
 
@@ -43,6 +46,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using Senparc.CO2NET.Cache;
+using Senparc.CO2NET.Exceptions;
 #if NET35 || NET40 || NET45
 using System.Web;
 #else
@@ -80,20 +84,21 @@ namespace Senparc.CO2NET.Cache
             {
                 if (_localObjectCache == null)
                 {
-#if NETSTANDARD2_0
-                    _localObjectCache = new MemoryCache(new MemoryCacheOptions());
-#else
                     _localObjectCache = SenparcDI.GetService<IMemoryCache>();
-#endif
+
+                    if (_localObjectCache == null)
+                    {
+                        throw new CacheException("IMemoryCache 依赖注入未设置！请在 Startup.cs 中使用 serviceCollection.AddMemoryCache() 进行设置！");
+                    }
                 }
                 return _localObjectCache;
             }
         }
 
         /// <summary>
-        /// .NET Core 的 MemoryCache 不提供便利所有项目的方法，因此这里做一个储存Key的地方
+        /// .NET Core 的 MemoryCache 不提供遍历所有项目的方法，因此这里做一个储存Key的地方
         /// </summary>
-        public static Dictionary<string, DateTime> Keys { get; set; } = new Dictionary<string, DateTime>();
+        public static Dictionary<string, DateTimeOffset> Keys { get; set; } = new Dictionary<string, DateTimeOffset>();
 
         static LocalObjectCacheHelper()
         {

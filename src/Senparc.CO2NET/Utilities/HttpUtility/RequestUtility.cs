@@ -13,7 +13,7 @@ License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF 
 either express or implied. See the License for the specific language governing permissions
 and limitations under the License.
 
-Detail: https://github.com/JeffreySu/WeiXinMPSDK/blob/master/license.md
+Detail: https://github.com/Senparc/Senparc.CO2NET/blob/master/LICENSE
 
 ----------------------------------------------------------------*/
 #endregion Apache License Version 2.0
@@ -47,6 +47,14 @@ Detail: https://github.com/JeffreySu/WeiXinMPSDK/blob/master/license.md
     修改标识：Senparc - 20180518
     修改描述：v4.21.0 支持 .NET Core 2.1.0-rc1-final 添加编译条件
 
+    -- CO2NET --
+
+    修改标识：Senparc - 20181009
+    修改描述：v0.2.15 Post 方法添加 headerAddition参数
+
+    修改标识：Senparc - 20181215
+    修改描述：v0.3.1 更新 RequestUtility.GetQueryString() 方法
+
 ----------------------------------------------------------------*/
 
 using System;
@@ -66,7 +74,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using Senparc.CO2NET.Extensions;
 #endif
-#if NETSTANDARD1_6 || NETSTANDARD2_0 || NETCOREAPP2_0 || NETCOREAPP2_1
+#if NETSTANDARD2_0
 using Microsoft.AspNetCore.Http;
 #endif
 
@@ -172,8 +180,9 @@ namespace Senparc.CO2NET.HttpUtility
         /// <param name="request"></param>
         /// <param name="refererUrl"></param>
         /// <param name="useAjax">是否使用Ajax</param>
+        /// <param name="headerAddition">header附加信息</param>
         /// <param name="timeOut"></param>
-        private static void HttpClientHeader(HttpWebRequest request, string refererUrl, bool useAjax, int timeOut)
+        private static void HttpClientHeader(HttpWebRequest request, string refererUrl, bool useAjax, Dictionary<string, string> headerAddition, int timeOut)
         {
             request.Accept = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8";
             request.UserAgent = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.57 Safari/537.36";
@@ -189,8 +198,17 @@ namespace Senparc.CO2NET.HttpUtility
             {
                 request.Headers.Add("X-Requested-With", "XMLHttpRequest");
             }
+
+            if (headerAddition != null)
+            {
+                foreach (var item in headerAddition)
+                {
+                    request.Headers.Add(item.Key, item.Value);
+                }
+            }
+
         }
-#else //NETSTANDARD1_6 || NETSTANDARD2_0 || NETCOREAPP2_0 || NETCOREAPP2_1
+#else // NETSTANDARD2_0
 
         /// <summary>
         /// 验证服务器证书
@@ -235,8 +253,9 @@ namespace Senparc.CO2NET.HttpUtility
         /// <param name="client"></param>
         /// <param name="refererUrl"></param>
         /// <param name="useAjax">是否使用Ajax</param>
+        /// <param name="headerAddition">header附加信息</param>
         /// <param name="timeOut"></param>
-        private static void HttpClientHeader(HttpClient client, string refererUrl, bool useAjax, int timeOut)
+        private static void HttpClientHeader(HttpClient client, string refererUrl, bool useAjax, Dictionary<string, string> headerAddition = null, int timeOut = Config.TIME_OUT)
         {
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/html"));
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xhtml+xml"));
@@ -265,6 +284,14 @@ namespace Senparc.CO2NET.HttpUtility
             if (useAjax)
             {
                 client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
+            }
+
+            if (headerAddition != null)
+            {
+                foreach (var item in headerAddition)
+                {
+                    client.DefaultRequestHeaders.Add(item.Key, item.Value);
+                }
             }
         }
 
@@ -310,19 +337,6 @@ namespace Senparc.CO2NET.HttpUtility
 
         #region 只需要使用同步的方法
 
-
-        ///// <summary>
-        ///// 请求是否发起自微信客户端的浏览器
-        ///// </summary>
-        ///// <param name="httpContext"></param>
-        ///// <returns></returns>
-        //[Obsolete("请使用Senparc.Weixin.BrowserUtility.BrowserUtility.SideInWeixinBrowser()方法")]
-        //public static bool IsWeixinClientRequest(this HttpContext httpContext)
-        //{
-        //    return !string.IsNullOrEmpty(httpContext.Request.UserAgent) &&
-        //           httpContext.Request.UserAgent.Contains("MicroMessenger");
-        //}
-
         /// <summary>
         /// 组装QueryString的方法
         /// 参数之间用&amp;连接，首位没有符号，如：a=1&amp;b=2&amp;c=3
@@ -342,7 +356,7 @@ namespace Senparc.CO2NET.HttpUtility
             foreach (var kv in formData)
             {
                 i++;
-                sb.AppendFormat("{0}={1}", kv.Key, kv.Value);
+                sb.AppendFormat("{0}={1}", kv.Key, Senparc.CO2NET.Extensions.WebCodingExtensions.UrlEncode(kv.Value));
                 if (i < formData.Count)
                 {
                     sb.Append("&");

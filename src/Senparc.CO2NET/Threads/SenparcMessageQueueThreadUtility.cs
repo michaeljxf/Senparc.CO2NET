@@ -13,7 +13,7 @@ License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF 
 either express or implied. See the License for the specific language governing permissions
 and limitations under the License.
 
-Detail: https://github.com/JeffreySu/WeiXinMPSDK/blob/master/license.md
+Detail: https://github.com/Senparc/Senparc.CO2NET/blob/master/LICENSE
 
 ----------------------------------------------------------------*/
 #endregion Apache License Version 2.0
@@ -47,7 +47,7 @@ namespace Senparc.CO2NET.Threads
         private readonly int _sleepMilliSeconds;
 
 
-        public SenparcMessageQueueThreadUtility(int sleepMilliSeconds = 1000)
+        public SenparcMessageQueueThreadUtility(int sleepMilliSeconds = 500)
         {
             _sleepMilliSeconds = sleepMilliSeconds;
         }

@@ -13,7 +13,7 @@ License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF 
 either express or implied. See the License for the specific language governing permissions
 and limitations under the License.
 
-Detail: https://github.com/JeffreySu/WeiXinMPSDK/blob/master/license.md
+Detail: https://github.com/Senparc/Senparc.CO2NET/blob/master/LICENSE
 
 ----------------------------------------------------------------*/
 #endregion Apache License Version 2.0
@@ -82,7 +82,7 @@ namespace Senparc.CO2NET.HttpUtility
         /// <returns></returns>
         private static string GetRandomFileName()
         {
-            return DateTime.Now.ToString("yyyyMMdd-HHmmss") + Guid.NewGuid().ToString("n").Substring(0, 6);
+            return SystemTime.Now.ToString("yyyyMMdd-HHmmss") + Guid.NewGuid().ToString("n").Substring(0, 6);
         }
 
 
@@ -140,6 +140,7 @@ namespace Senparc.CO2NET.HttpUtility
         /// </summary>
         /// <param name="url">需要下载文件的Url</param>
         /// <param name="filePathName">保存文件的路径，如果下载文件包含文件名，按照文件名储存，否则将分配Ticks随机文件名</param>
+        /// <param name="timeOut">超时时间</param>
         /// <returns></returns>
         public static string Download(string url, string filePathName, int timeOut = 999)
         {
@@ -274,14 +275,16 @@ namespace Senparc.CO2NET.HttpUtility
         /// 【异步方法】从Url下载，并保存到指定目录
         /// </summary>
         /// <param name="url">需要下载文件的Url</param>
-        /// <param name="filePathName"></param>
+        /// <param name="filePathName">保存文件的路径，如果下载文件包含文件名，按照文件名储存，否则将分配Ticks随机文件名</param>
+        /// <param name="timeOut">超时时间</param>
         /// <returns></returns>
-        public static async Task<string> DownloadAsync(string url, string filePathName)
+        public static async Task<string> DownloadAsync(string url, string filePathName, int timeOut = Config.TIME_OUT)
         {
             var dir = Path.GetDirectoryName(filePathName) ?? "/";
             Directory.CreateDirectory(dir);
 
             System.Net.Http.HttpClient httpClient = new HttpClient();
+            httpClient.Timeout = TimeSpan.FromMilliseconds(timeOut);
             using (var responseMessage = await httpClient.GetAsync(url))
             {
                 if (responseMessage.StatusCode == HttpStatusCode.OK)
