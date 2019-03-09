@@ -14,10 +14,14 @@
     修改标识：pengweiqhca - 20180802
     修改描述：v0.2.8 添加 SenparcDI.GetIServiceProvider() 方法，以支持其他依赖注入框架
 
+    修改标识：pengweiqhca - 20190118
+    修改描述：v0.5.2 添加 SenparcDI.GetRequiredService() 方法，提供线程内独立 ServiceProvider 实例
+
 ----------------------------------------------------------------*/
 
 #if NETSTANDARD2_0
 using System;
+using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Senparc.CO2NET.Cache;
 
@@ -30,20 +34,118 @@ namespace Senparc.CO2NET
     {
         private static ServiceProvider _globalServiceProvider;
 
+        //public const string SENPARC_DI_THREAD_SERVICE_PROVIDER = "___SenparcDIThreadServiceProvider";
+        public const string SENPARC_DI_THREAD_SERVICE_Scope = "___SenparcDIThreadScope";
+
         /// <summary>
         /// 全局 ServiceCollection
         /// </summary>
         public static IServiceCollection GlobalServiceCollection { get; set; }
 
+        ///// <summary>
+        ///// 创建一个新的 ServiceCollection 对象
+        ///// </summary>
+        ///// <returns></returns>
+        //public static IServiceCollection GetServiceCollection()
+        //{
+        //    return GlobalServiceCollection;
+        //}
+
+        private static object _globalIServiceProviderLock = new object();
+        private static object _threadIServiceProviderLock = new object();
+
         /// <summary>
-        /// 创建一个新的 ServiceCollection 对象
+        /// 全局 IServiceCollection 对象
         /// </summary>
-        /// <returns></returns>
-        public static IServiceCollection GetServiceCollection()
+        public static IServiceProvider GlobalIServiceProvider { get; set; }
+
+        /// <summary>
+        /// 线程内的 单一 Scope 范围 ServiceScope
+        /// </summary>
+        public static IServiceScope ThreadServiceScope
         {
-            return GlobalServiceCollection;
+            get
+            {
+                var threadServiceScope = Thread.GetData(Thread.GetNamedDataSlot(SENPARC_DI_THREAD_SERVICE_Scope)) as IServiceScope;
+                return threadServiceScope;
+            }
         }
 
+
+        /// <summary>
+        /// 获取 ServiceProvider
+        /// </summary>
+        /// <param name="useGlobalScope">是否使用全局唯一 ServiceScope 对象。
+        /// <para>默认为 true，即使用全局唯一 ServiceScope。</para>
+        /// <para>如果为 false，即使用线程内唯一 ServiceScope 对象</para>
+        /// </param>
+        /// <returns></returns>
+        public static IServiceProvider GetIServiceProvider(bool useGlobalScope = true)
+        {
+            if (useGlobalScope)
+            {
+                if (GlobalIServiceProvider == null)
+                {
+                    //加锁确保唯一
+                    lock (_globalIServiceProviderLock)
+                    {
+                        if (GlobalIServiceProvider == null)
+                        {
+                            //注意：BuildServiceProvider() 方法每次会生成不同的 ServiceProvider 对象！
+                            GlobalIServiceProvider = GlobalServiceCollection.BuildServiceProvider();
+                        }
+                    }
+                }
+                return GlobalIServiceProvider;
+            }
+            else
+            {
+                if (ThreadServiceScope == null)
+                {
+                    //加锁确保唯一
+                    lock (_threadIServiceProviderLock)
+                    {
+                        if (ThreadServiceScope == null)
+                        {
+                            //注意：BuildServiceProvider() 方法每次会生成不同的 ServiceProvider 对象！
+                            //GlobalIServiceProvider = GetServiceCollection().BuildServiceProvider();
+
+                            var globalServiceProvider = GetIServiceProvider(true);
+
+                            Thread.SetData(Thread.GetNamedDataSlot(SENPARC_DI_THREAD_SERVICE_Scope), globalServiceProvider.CreateScope());
+                        }
+                    }
+                }
+                return ThreadServiceScope.ServiceProvider;
+            }
+        }
+
+
+        /// <summary>
+        /// 使用 .net core 默认的 DI 方法获得实例
+        /// <para>如果未注册，返回 null</para>
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        /// <param name="useGlobalScope">是否使用全局唯一 ServiceScope 对象，默认为 false，即使用线程内唯一 ServiceScope 对象</param>
+        public static T GetService<T>(bool useGlobalScope = true)
+        {
+            return GetIServiceProvider(useGlobalScope).GetService<T>();
+        }
+
+        /// <summary>
+        /// 使用 .net core 默认的 DI 方法获得实例（推荐）
+        /// <para>如果未注册，抛出异常 </para>
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        /// <param name="useGlobalScope">是否使用全局唯一 ServiceScope 对象，默认为 false，即使用线程内唯一 ServiceScope 对象</param>
+        public static T GetRequiredService<T>(bool useGlobalScope = true)
+        {
+            return GetIServiceProvider(useGlobalScope).GetRequiredService<T>();
+        }
+
+        #region 过期方法
 
         /// <summary>
         /// 已过期，请使用 GlobalIServiceProvider
@@ -59,13 +161,6 @@ namespace Senparc.CO2NET
             }
         }
 
-        private static object _globalIServiceProviderLock = new object();
-
-        /// <summary>
-        /// 全局 IServiceCollection 对象
-        /// </summary>
-        public static IServiceProvider GlobalIServiceProvider { get; set; }
-
         /// <summary>
         /// 获取 ServiceProvider
         /// </summary>
@@ -76,43 +171,12 @@ namespace Senparc.CO2NET
             if (GlobalServiceProvider == null)
             {
                 //注意：BuildServiceProvider() 方法每次会生成不同的 ServiceProvider 对象！
-                GlobalServiceProvider = GetServiceCollection().BuildServiceProvider();
+                GlobalServiceProvider = GlobalServiceCollection.BuildServiceProvider();
             }
             return GlobalServiceProvider;
         }
 
-        /// <summary>
-        /// 获取 ServiceProvider
-        /// </summary>
-        /// <returns></returns>
-        public static IServiceProvider GetIServiceProvider()
-        {
-            if (GlobalIServiceProvider == null)
-            {
-                //加锁确保唯一
-                lock (_globalIServiceProviderLock)
-                {
-                    if (GlobalIServiceProvider == null)
-                    {
-                        //注意：BuildServiceProvider() 方法每次会生成不同的 ServiceProvider 对象！
-                        GlobalIServiceProvider = GetServiceCollection().BuildServiceProvider();
-                    }
-                }
-
-            }
-            return GlobalIServiceProvider;
-        }
-
-
-        /// <summary>
-        /// 使用 .net core 默认的 DI 方法获得实例
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        public static T GetService<T>()
-        {
-            return GetIServiceProvider().GetService<T>();
-        }
+        #endregion
     }
 }
 #endif

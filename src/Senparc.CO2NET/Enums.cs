@@ -1,7 +1,7 @@
 ﻿#region Apache License Version 2.0
 /*----------------------------------------------------------------
 
-Copyright 2018 Jeffrey Su & Suzhou Senparc Network Technology Co.,Ltd.
+Copyright 2019 Suzhou Senparc Network Technology Co.,Ltd.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
 except in compliance with the License. You may obtain a copy of the License at
@@ -27,6 +27,10 @@ Detail: https://github.com/Senparc/Senparc.CO2NET/blob/master/LICENSE
     
     创建标识：Senparc - 20180602
  
+    修改标识：Senparc - 20180704
+    修改描述：v0.5.1.1 添加 Sex.未设置 枚举值
+
+
 ----------------------------------------------------------------*/
 
 namespace Senparc.CO2NET
@@ -58,6 +62,7 @@ namespace Senparc.CO2NET
     {
 #pragma warning disable CS1591 // 缺少对公共可见类型或成员的 XML 注释   
         未知 = 0,
+        未设置 = 0,
         男 = 1,
         女 = 2,
         其他 = 3
